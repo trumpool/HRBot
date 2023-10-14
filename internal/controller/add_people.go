@@ -9,7 +9,18 @@ import (
 	"xlab-feishu-robot/internal/pkg"
 )
 
-func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
+func AddPeople(content string) {
+	people, group := parsePeopleAndGroup(content)
+	logrus.Infof("people:%v, group:%v", people, group)
+	// 获取所有人的ID
+
+	// 获得所有群的ID
+
+	// 将所有人加入所有群
+
+}
+
+func GetAllPeopleInDepartment() ([]*larkcontact.User, error) {
 	// 创建请求对象
 	req := larkcontact.NewFindByDepartmentUserReqBuilder().
 		UserIdType("open_id").

@@ -3,6 +3,7 @@ package receiveMessage
 import (
 	"github.com/sirupsen/logrus"
 	"strings"
+	"xlab-feishu-robot/internal/controller"
 )
 
 func p2p(messageevent *MessageEvent) {
@@ -18,4 +19,11 @@ func p2pTextMessage(messageevent *MessageEvent) {
 	// get the pure text message
 	messageevent.Message.Content = strings.TrimSuffix(strings.TrimPrefix(messageevent.Message.Content, "{\"text\":\""), "\"}")
 	logrus.WithFields(logrus.Fields{"message content": messageevent.Message.Content}).Info("Receive p2p TEXT message")
+	content := messageevent.Message.Content
+	switch {
+	case strings.Contains(content, "批量加人"):
+		controller.AddPeople(content)
+	default:
+		logrus.Errorf("Receive p2p TEXT message, but this type is not supported")
+	}
 }
