@@ -2,8 +2,8 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	larkauth "github.com/larksuite/oapi-sdk-go/v3/service/auth/v3"
 	"github.com/sirupsen/logrus"
 	"xlab-feishu-robot/internal/config"
@@ -15,7 +15,7 @@ func GetTenantAccessToken() (string, error) {
 	req := larkauth.NewInternalTenantAccessTokenReqBuilder().
 		Body(larkauth.NewInternalTenantAccessTokenReqBodyBuilder().
 			AppId(config.C.Feishu.AppId).
-			AppSecret(config.C.Feishu.AppId).
+			AppSecret(config.C.Feishu.AppSecret).
 			Build()).
 		Build()
 	// 发起请求
@@ -31,6 +31,12 @@ func GetTenantAccessToken() (string, error) {
 		return "", fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
 	}
 
+	var result map[string]interface{}
+	err = json.Unmarshal(resp.ApiResp.RawBody, &result)
+	if err != nil {
+		logrus.Error("GetTenantAccessToken failed")
+		return "", err
+	}
 	logrus.Info("GetTenantAccessToken success")
-	return larkcore.Prettify(resp), nil
+	return result["tenant_access_token"].(string), nil
 }
