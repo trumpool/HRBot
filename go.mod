@@ -3,8 +3,8 @@ module xlab-feishu-robot
 go 1.19
 
 require (
-	github.com/YasyaKarasu/feishuapi v1.2.9
 	github.com/gin-gonic/gin v1.9.0
+	github.com/larksuite/oapi-sdk-go/v3 v3.0.30
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.15.0
 	github.com/swaggo/files v1.0.1
@@ -40,7 +40,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect

@@ -1,7 +1,5 @@
 package pkg
 
-import (
-	"github.com/YasyaKarasu/feishuapi"
-)
+import lark "github.com/larksuite/oapi-sdk-go/v3"
 
-var Cli feishuapi.AppClient
+var Client *lark.Client

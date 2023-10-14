@@ -1,13 +1,14 @@
 package config
 
 import (
-	"github.com/YasyaKarasu/feishuapi"
+	lark "github.com/larksuite/oapi-sdk-go/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"xlab-feishu-robot/internal/pkg"
 )
 
 type Config struct {
-	Feishu feishuapi.Config
+	Feishu FeishuConfig
 	Server struct {
 		Port int
 
@@ -38,6 +39,13 @@ func ReadConfig() {
 	logrus.Info("Configuration file loaded")
 }
 
-func SetupFeishuApiClient(cli *feishuapi.AppClient) {
-	cli.Conf = C.Feishu
+func SetupFeishuApiClient() {
+	pkg.Client = lark.NewClient(C.Feishu.AppId, C.Feishu.AppSecret)
+}
+
+type FeishuConfig struct {
+	AppId             string
+	AppSecret         string
+	VerificationToken string
+	EncryptKey        string
 }
