@@ -5,8 +5,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type messageHandler func(*MessageEvent)
-
 // for more detailed information, see https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/message/events/receive
 type MessageEvent struct {
 	Sender struct {
