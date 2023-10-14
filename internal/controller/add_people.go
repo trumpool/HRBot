@@ -5,6 +5,8 @@ import (
 	"fmt"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
+	"github.com/sirupsen/logrus"
+	"strings"
 	"xlab-feishu-robot/internal/config"
 	"xlab-feishu-robot/internal/pkg"
 )
@@ -45,4 +47,24 @@ func GetAllPeopleInDepartment() ([]*larkcontact.User, error) {
 	}
 
 	return resp.Data.Items, nil
+}
+
+func parsePeopleAndGroup(content string) (people []string, group []string) {
+	// content格式：批量加人. 张三, 李四, 王五. 推送群, 答疑群, 交流群
+	// 1. 以.分割
+	tmp := strings.Split(content, ".")
+	peopleStr, groupStr := tmp[1], tmp[2]
+	// 2. 以,分割
+	people = strings.Split(peopleStr, ",")
+	group = strings.Split(groupStr, ",")
+
+	// 3. 去除空格
+	for i := 0; i < len(people); i++ {
+		people[i] = strings.TrimSpace(people[i])
+	}
+	for i := 0; i < len(group); i++ {
+		group[i] = strings.TrimSpace(group[i])
+	}
+
+	return
 }
