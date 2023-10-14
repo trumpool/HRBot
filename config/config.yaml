@@ -15,5 +15,8 @@ server:
   exampleField1: ExampleString
 
 # add your custom fields here
-exampleField2:
-  exampleField3: 100
+departmentID: xxx
+# 可选值有：
+#   department_id：以自定义department_id来标识部门
+#   open_department_id：以open_department_id来标识部门
+departmentIdType: xxx

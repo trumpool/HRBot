@@ -16,10 +16,8 @@ type Config struct {
 		ExampleField1 string
 	}
 
-	// add your configuration fields here
-	ExampleField2 struct {
-		ExampleField3 int
-	}
+	DepartmentID     string
+	DepartmentIdType string
 }
 
 var C Config
