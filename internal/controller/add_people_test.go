@@ -9,7 +9,26 @@ import (
 	"xlab-feishu-robot/internal/log"
 )
 
-func TestGetPeopleID(t *testing.T) {
+func Test_getAllPeopleInDepartment(t *testing.T) {
+	setupForTest()
+	people, err := getAllPeopleInDepartment()
+	assert.NoError(t, err)
+	for _, v := range people {
+		logrus.Info(*v.Name)
+	}
+}
+
+func Test_getPeopleID(t *testing.T) {
+	setupForTest()
+	IDs, err := getPeopleID([]string{"牛马", "鼠鼠"})
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(IDs))
+	for _, v := range IDs {
+		logrus.Info(v)
+	}
+}
+
+func setupForTest() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath("../../config/")
 
@@ -29,11 +48,4 @@ func TestGetPeopleID(t *testing.T) {
 
 	// feishu api client
 	config.SetupFeishuApiClient()
-
-	IDs, err := getPeopleID([]string{"牛马", "鼠鼠"})
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(IDs))
-	for _, v := range IDs {
-		logrus.Info(v)
-	}
 }
