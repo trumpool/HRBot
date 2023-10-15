@@ -35,10 +35,24 @@ func GetAllPeopleInDepartment() ([]*larkcontact.User, error) {
 		return nil, err
 	}
 	resp, err := pkg.Client.Contact.User.FindByDepartment(context.Background(), req, larkcore.WithTenantAccessToken(tenantAccessToken))
-
 	// 处理错误
 	if err != nil {
 		return nil, err
+	}
+
+	result := resp.Data.Items
+	for *resp.Data.HasMore {
+		req = larkcontact.NewFindByDepartmentUserReqBuilder().
+			UserIdType("open_id").
+			DepartmentIdType(config.C.DepartmentIdType).
+			DepartmentId(config.C.DepartmentID).
+			PageToken(*resp.Data.PageToken).
+			Build()
+		resp, err = pkg.Client.Contact.User.FindByDepartment(context.Background(), req, larkcore.WithTenantAccessToken(tenantAccessToken))
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, resp.Data.Items...)
 	}
 
 	// 服务端错误处理
@@ -46,7 +60,7 @@ func GetAllPeopleInDepartment() ([]*larkcontact.User, error) {
 		return nil, fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
 	}
 
-	return resp.Data.Items, nil
+	return result, nil
 }
 
 func parsePeopleAndGroup(content string) (people []string, group []string) {
