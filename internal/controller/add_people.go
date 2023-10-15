@@ -59,6 +59,9 @@ func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
 	if err != nil {
 		return nil, err
 	}
+	if !resp.Success() {
+		return nil, fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+	}
 
 	result := resp.Data.Items
 	for *resp.Data.HasMore {
@@ -72,12 +75,11 @@ func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, resp.Data.Items...)
-	}
+		if !resp.Success() {
+			return nil, fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+		}
 
-	// 服务端错误处理
-	if !resp.Success() {
-		return nil, fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+		result = append(result, resp.Data.Items...)
 	}
 
 	return result, nil
