@@ -37,6 +37,16 @@ func Test_getBotGroupList(t *testing.T) {
 	}
 }
 
+func Test_getGroupsID(t *testing.T) {
+	setupForTest()
+	IDs, err := getGroupsID([]string{"测试知识树提醒"})
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(IDs))
+	for _, v := range IDs {
+		logrus.Info(v)
+	}
+}
+
 func setupForTest() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath("../../config/")

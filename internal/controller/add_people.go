@@ -43,6 +43,26 @@ func getPeopleID(wantedPeople []string) ([]string, error) {
 	return result, nil
 }
 
+func getGroupsID(wantedGroup []string) ([]string, error) {
+	allGroups, err := getBotGroupList()
+	if err != nil {
+		return nil, err
+	}
+	var result []string
+
+	wantedGroupMap := make(map[string]bool)
+	for _, v := range wantedGroup {
+		wantedGroupMap[v] = true
+	}
+
+	for _, v := range allGroups {
+		if wantedGroupMap[*v.Name] {
+			result = append(result, *v.ChatId)
+		}
+	}
+	return result, nil
+}
+
 func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
 	// 创建请求对象
 	req := larkcontact.NewFindByDepartmentUserReqBuilder().
