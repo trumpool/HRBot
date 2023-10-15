@@ -28,6 +28,15 @@ func Test_getPeopleID(t *testing.T) {
 	}
 }
 
+func Test_getBotGroupList(t *testing.T) {
+	setupForTest()
+	groups, err := getBotGroupList()
+	assert.NoError(t, err)
+	for _, v := range groups {
+		logrus.Info(*v.Name)
+	}
+}
+
 func setupForTest() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath("../../config/")

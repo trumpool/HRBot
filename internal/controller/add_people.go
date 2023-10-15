@@ -5,6 +5,7 @@ import (
 	"fmt"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
+	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"github.com/sirupsen/logrus"
 	"strings"
 	"xlab-feishu-robot/internal/config"
@@ -72,6 +73,42 @@ func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
 			PageToken(*resp.Data.PageToken).
 			Build()
 		resp, err = pkg.Client.Contact.User.FindByDepartment(context.Background(), req, larkcore.WithTenantAccessToken(tenantAccessToken))
+		if err != nil {
+			return nil, err
+		}
+		if !resp.Success() {
+			return nil, fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+		}
+
+		result = append(result, resp.Data.Items...)
+	}
+
+	return result, nil
+}
+
+// getBotGroupList 获取机器人所在的所有群
+func getBotGroupList() ([]*larkim.ListChat, error) {
+	tenantAccessToken, err := GetTenantAccessToken()
+	if err != nil {
+		return nil, err
+	}
+
+	req := larkim.NewListChatReqBuilder().
+		Build()
+	resp, err := pkg.Client.Im.Chat.List(context.Background(), req, larkcore.WithTenantAccessToken(tenantAccessToken))
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Success() {
+		return nil, fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+	}
+
+	result := resp.Data.Items
+	for *resp.Data.HasMore {
+		req = larkim.NewListChatReqBuilder().
+			PageToken(*resp.Data.PageToken).
+			Build()
+		resp, err = pkg.Client.Im.Chat.List(context.Background(), req, larkcore.WithTenantAccessToken(tenantAccessToken))
 		if err != nil {
 			return nil, err
 		}
