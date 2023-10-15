@@ -16,11 +16,27 @@ func AddPeople(content string) {
 	people, group := parsePeopleAndGroup(content)
 	logrus.Infof("people:%v, group:%v", people, group)
 	// 获取所有人的ID
+	peopleID, err := getPeopleID(people)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	logrus.Infof("peopleID:%v", peopleID)
 
 	// 获得所有群的ID
+	groupsID, err := getGroupsID(group)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	logrus.Infof("groupsID:%v", groupsID)
 
 	// 将所有人加入所有群
-
+	err = inviteUserToGroupChat(peopleID, groupsID)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
 }
 
 func inviteUserToGroupChat(peopleID []string, groupsID []string) error {
