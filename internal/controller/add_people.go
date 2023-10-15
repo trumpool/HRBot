@@ -23,6 +23,33 @@ func AddPeople(content string) {
 
 }
 
+func inviteUserToGroupChat(peopleID []string, groupsID []string) error {
+	for _, groupID := range groupsID {
+		// 创建请求对象
+		req := larkim.NewCreateChatMembersReqBuilder().
+			ChatId(groupID).
+			MemberIdType("open_id").
+			// 将参数中可用的 ID 全部拉入群聊，返回拉群成功的响应，并展示剩余不可用的 ID 及原因
+			SucceedType(0).
+			Body(larkim.NewCreateChatMembersReqBodyBuilder().
+				IdList(peopleID).
+				Build()).
+			Build()
+		// 发起请求
+		resp, err := pkg.Client.Im.ChatMembers.Create(context.Background(), req)
+		// 处理错误
+		if err != nil {
+			return err
+		}
+		if !resp.Success() {
+			return fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+		}
+		logrus.Info(resp.Data)
+	}
+
+	return nil
+}
+
 func getPeopleID(wantedPeople []string) ([]string, error) {
 	allPeople, err := getAllPeopleInDepartment()
 	if err != nil {
