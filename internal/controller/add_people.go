@@ -22,7 +22,27 @@ func AddPeople(content string) {
 
 }
 
-func GetAllPeopleInDepartment() ([]*larkcontact.User, error) {
+func getPeopleID(wantedPeople []string) ([]string, error) {
+	allPeople, err := getAllPeopleInDepartment()
+	if err != nil {
+		return nil, err
+	}
+	var result []string
+
+	wantedPeopleMap := make(map[string]bool)
+	for _, v := range wantedPeople {
+		wantedPeopleMap[v] = true
+	}
+
+	for _, v := range allPeople {
+		if wantedPeopleMap[*v.Name] {
+			result = append(result, *v.OpenId)
+		}
+	}
+	return result, nil
+}
+
+func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
 	// 创建请求对象
 	req := larkcontact.NewFindByDepartmentUserReqBuilder().
 		UserIdType("open_id").
