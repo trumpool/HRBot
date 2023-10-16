@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
@@ -22,7 +21,7 @@ func AddPeople(messageEvent *store.MessageEvent) {
 	people, group := parsePeopleAndGroup(messageEvent.Message.Content)
 	logrus.Infof("people:%v, group:%v", people, group)
 	// 获取所有人的ID
-	peopleID, err := getPeopleID(people)
+	peopleID, foundPeopleMap, err := getPeopleID(people)
 	if err != nil {
 		logrus.Error(err)
 		return
@@ -30,12 +29,15 @@ func AddPeople(messageEvent *store.MessageEvent) {
 	logrus.Infof("peopleID:%v", peopleID)
 
 	// 获得所有群的ID
-	groupsID, err := getGroupsID(group)
+	groupsID, foundGroupMap, err := getGroupsID(group)
 	if err != nil {
 		logrus.Error(err)
 		return
 	}
 	logrus.Infof("groupsID:%v", groupsID)
+
+	// 检查是否有未找到的ID
+	checkAllIDFound(foundPeopleMap, foundGroupMap, people, group, messageEvent)
 
 	// 将所有人加入所有群
 	dataRecord, err := inviteUserToGroupChat(peopleID, groupsID)
@@ -104,10 +106,29 @@ func checkInviteResult(dataRecord []*larkim.CreateChatMembersRespData, messageEv
 	SendMessage(messageEvent.Sender.Sender_id.Open_id, message)
 }
 
-func getPeopleID(wantedPeople []string) ([]string, error) {
+func checkAllIDFound(foundPeopleMap map[string]bool, foundGroupMap map[string]bool, peopleNameList []string, groupNameList []string, messageEvent *store.MessageEvent) {
+	message := ""
+	for _, v := range peopleNameList {
+		if !foundPeopleMap[v] {
+			message += fmt.Sprintf("未找到用户：%s\n", v)
+		}
+	}
+
+	for _, v := range groupNameList {
+		if !foundGroupMap[v] {
+			message += fmt.Sprintf("未找到群：%s\n", v)
+		}
+	}
+
+	if message != "" {
+		SendMessage(messageEvent.Sender.Sender_id.Open_id, message)
+	}
+}
+
+func getPeopleID(wantedPeople []string) ([]string, map[string]bool, error) {
 	allPeople, err := getAllPeopleInDepartment()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var result []string
 
@@ -116,18 +137,20 @@ func getPeopleID(wantedPeople []string) ([]string, error) {
 		wantedPeopleMap[v] = true
 	}
 
+	foundPeopleMap := make(map[string]bool)
 	for _, v := range allPeople {
 		if wantedPeopleMap[*v.Name] {
 			result = append(result, *v.OpenId)
+			foundPeopleMap[*v.Name] = true
 		}
 	}
-	return result, nil
+	return result, foundPeopleMap, nil
 }
 
-func getGroupsID(wantedGroup []string) ([]string, error) {
+func getGroupsID(wantedGroup []string) ([]string, map[string]bool, error) {
 	allGroups, err := getBotGroupList()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var result []string
 
@@ -136,12 +159,14 @@ func getGroupsID(wantedGroup []string) ([]string, error) {
 		wantedGroupMap[v] = true
 	}
 
+	foundGroupMap := make(map[string]bool)
 	for _, v := range allGroups {
 		if wantedGroupMap[*v.Name] {
 			result = append(result, *v.ChatId)
+			foundGroupMap[*v.Name] = true
 		}
 	}
-	return result, nil
+	return result, foundGroupMap, nil
 }
 
 func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
