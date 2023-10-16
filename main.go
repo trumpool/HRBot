@@ -14,10 +14,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func Init() {
-
-}
-
 func main() {
 	config.ReadConfig()
 
