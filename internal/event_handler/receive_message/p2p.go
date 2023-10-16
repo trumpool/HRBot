@@ -19,9 +19,13 @@ func p2p(messageevent *store.MessageEvent) {
 func p2pTextMessage(messageevent *store.MessageEvent) {
 	// get the pure text message
 	messageevent.Message.Content = strings.TrimSuffix(strings.TrimPrefix(messageevent.Message.Content, "{\"text\":\""), "\"}")
-	logrus.WithFields(logrus.Fields{"message content": messageevent.Message.Content}).Info("Receive p2p TEXT message")
+	content := messageevent.Message.Content
+	logrus.WithFields(logrus.Fields{"message content": content}).Info("Receive p2p TEXT message")
+
 	switch {
-	case strings.Contains(messageevent.Message.Content, "批量加人"):
+	case strings.Contains(content, "help"):
+		controller.HelpP2P(messageevent)
+	case strings.Contains(content, "批量加人"):
 		controller.AddPeople(messageevent)
 	default:
 		logrus.Errorf("Receive p2p TEXT message, but this type is not supported")
