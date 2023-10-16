@@ -39,6 +39,8 @@ func AddPeople(messageEvent *store.MessageEvent) {
 	// 检查是否有未找到的ID
 	checkAllIDFound(foundPeopleMap, foundGroupMap, people, group, messageEvent)
 
+	checkWhetherBotInGroup(foundGroupMap, messageEvent)
+
 	// 将所有人加入所有群
 	dataRecord, err := inviteUserToGroupChat(foundPeopleMap, foundGroupMap)
 	if err != nil {
@@ -109,6 +111,34 @@ func checkInviteResult(dataRecord []*larkim.CreateChatMembersRespData, messageEv
 	}
 
 	SendMessage(messageEvent.Sender.Sender_id.Open_id, message)
+}
+
+// checkWhetherBotInGroup 检查机器人是否在群中，如果不在则向用户发送错误信息
+func checkWhetherBotInGroup(groupsMap map[string]string, messageEvent *store.MessageEvent) {
+	notInGroup := make([]string, 0)
+	for groupName, groupID := range groupsMap {
+		req := larkim.NewIsInChatChatMembersReqBuilder().
+			ChatId(groupID).
+			Build()
+		resp, err := pkg.Client.Im.ChatMembers.IsInChat(context.Background(), req)
+
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+		if !resp.Success() {
+			logrus.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+			return
+		}
+
+		if !*resp.Data.IsInChat {
+			notInGroup = append(notInGroup, groupName)
+		}
+	}
+
+	if len(notInGroup) != 0 {
+		SendMessage(messageEvent.Sender.Sender_id.Open_id, fmt.Sprintf("机器人不在以下群中：%v", notInGroup))
+	}
 }
 
 func checkAllIDFound(foundPeopleMap map[string]string, foundGroupMap map[string]string, peopleNameList []string, groupNameList []string, messageEvent *store.MessageEvent) {
