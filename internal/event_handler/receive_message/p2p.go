@@ -23,7 +23,7 @@ func p2pTextMessage(messageevent *store.MessageEvent) {
 	content := messageevent.Message.Content
 	switch {
 	case strings.Contains(content, "批量加人"):
-		if !hasPermission(messageevent) {
+		if !controller.HasPermission(messageevent) {
 			logrus.Warn("Receive p2p TEXT message, but the sender does not have permission")
 			return
 		}
