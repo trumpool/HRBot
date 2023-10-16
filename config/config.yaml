@@ -20,3 +20,8 @@ departmentID: xxx
 #   department_id：以自定义department_id来标识部门
 #   open_department_id：以open_department_id来标识部门
 departmentIdType: xxx
+
+# []string
+whiteList:
+  - user_open_id1
+  - user_open_id2

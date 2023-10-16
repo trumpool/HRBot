@@ -18,6 +18,8 @@ type Config struct {
 
 	DepartmentID     string
 	DepartmentIdType string
+
+	WhiteList []string
 }
 
 var C Config
