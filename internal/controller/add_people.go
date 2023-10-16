@@ -10,10 +10,16 @@ import (
 	"strings"
 	"xlab-feishu-robot/internal/config"
 	"xlab-feishu-robot/internal/pkg"
+	"xlab-feishu-robot/internal/store"
 )
 
-func AddPeople(content string) {
-	people, group := parsePeopleAndGroup(content)
+func AddPeople(messageEvent *store.MessageEvent) {
+	// 检查权限
+	if !HasPermission(messageEvent) {
+		logrus.Warn("No permission")
+		return
+	}
+	people, group := parsePeopleAndGroup(messageEvent.Message.Content)
 	logrus.Infof("people:%v, group:%v", people, group)
 	// 获取所有人的ID
 	peopleID, err := getPeopleID(people)
