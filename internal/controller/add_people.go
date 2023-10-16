@@ -42,7 +42,7 @@ func AddPeople(messageEvent *store.MessageEvent) {
 	checkWhetherBotInGroup(foundGroupMap, messageEvent)
 
 	// 将所有人加入所有群
-	dataRecord, err := inviteUserToGroupChat(foundPeopleMap, foundGroupMap)
+	dataRecord, err := inviteUserToGroupChat(foundPeopleMap, foundGroupMap, messageEvent.Sender.Sender_id.Open_id)
 	if err != nil {
 		logrus.Error(err)
 		return
@@ -51,7 +51,7 @@ func AddPeople(messageEvent *store.MessageEvent) {
 	checkInviteResult(dataRecord, messageEvent)
 }
 
-func inviteUserToGroupChat(peopleMap map[string]string, groupsMap map[string]string) ([]*larkim.CreateChatMembersRespData, error) {
+func inviteUserToGroupChat(peopleMap map[string]string, groupsMap map[string]string, receiverID string) ([]*larkim.CreateChatMembersRespData, error) {
 	dataRecord := make([]*larkim.CreateChatMembersRespData, 0)
 	IDList := make([]string, 0)
 	for _, v := range peopleMap {
@@ -63,8 +63,7 @@ func inviteUserToGroupChat(peopleMap map[string]string, groupsMap map[string]str
 		req := larkim.NewCreateChatMembersReqBuilder().
 			ChatId(groupID).
 			MemberIdType("open_id").
-			// 将参数中可用的 ID 全部拉入群聊，返回拉群成功的响应，并展示剩余不可用的 ID 及原因
-			SucceedType(1).
+			SucceedType(0).
 			Body(larkim.NewCreateChatMembersReqBodyBuilder().
 				IdList(IDList).
 				Build()).
@@ -72,11 +71,8 @@ func inviteUserToGroupChat(peopleMap map[string]string, groupsMap map[string]str
 		// 发起请求
 		resp, err := pkg.Client.Im.ChatMembers.Create(context.Background(), req)
 		// 处理错误
-		if err != nil {
-			return nil, err
-		}
-		if !resp.Success() {
-			return nil, fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+		if err != nil || !resp.Success() {
+			SendMessage(receiverID, fmt.Sprintf("邀请失败，错误信息：%s, response: %v", err.Error(), resp))
 		}
 
 		dataRecord = append(dataRecord, resp.Data)
@@ -107,7 +103,7 @@ func checkInviteResult(dataRecord []*larkim.CreateChatMembersRespData, messageEv
 	message += "请联系机器人管理员，将您的输入和错误信息一起反馈，谢谢！"
 
 	if len(invalidIDList) == 0 && len(notExistedIDList) == 0 {
-		message = "所有用户均已成功加入群聊！"
+		message = "执行结束"
 	}
 
 	SendMessage(messageEvent.Sender.Sender_id.Open_id, message)
