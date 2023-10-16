@@ -24,7 +24,7 @@ func Test_getAllPeopleInDepartment(t *testing.T) {
 
 func Test_getPeopleID(t *testing.T) {
 	setupForTest()
-	IDs, _, err := getPeopleID([]string{"牛马", "鼠鼠"})
+	_, err := getPeopleID([]string{"牛马", "鼠鼠"})
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(IDs))
 	for _, v := range IDs {
@@ -43,7 +43,7 @@ func Test_getBotGroupList(t *testing.T) {
 
 func Test_getGroupsID(t *testing.T) {
 	setupForTest()
-	IDs, _, err := getGroupsID([]string{"测试知识树提醒"})
+	_, err := getGroupsID([]string{"测试知识树提醒"})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(IDs))
 	for _, v := range IDs {
