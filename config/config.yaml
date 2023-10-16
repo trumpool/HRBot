@@ -19,6 +19,3 @@ departmentID: STD
 departmentIdType: department_id
 # 填写需要使用机器人的用户open_id
 whiteList:
-  - ou_3beb4cc9fe12d70f4bf4f4955ca005cd
-  - ou_4a3ae0c4a5ddea33ed39ba271b82d85c
-  - ou_bf3e7b524e1fc5768405baba75232b67
