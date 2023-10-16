@@ -52,7 +52,7 @@ func inviteUserToGroupChat(peopleID []string, groupsID []string) error {
 			ChatId(groupID).
 			MemberIdType("open_id").
 			// 将参数中可用的 ID 全部拉入群聊，返回拉群成功的响应，并展示剩余不可用的 ID 及原因
-			SucceedType(0).
+			SucceedType(1).
 			Body(larkim.NewCreateChatMembersReqBodyBuilder().
 				IdList(peopleID).
 				Build()).
