@@ -27,6 +27,8 @@ func p2pTextMessage(messageevent *store.MessageEvent) {
 		controller.HelpP2P(messageevent)
 	case strings.Contains(content, "批量加人"):
 		controller.AddPeople(messageevent)
+	case strings.Contains(content, "批量删人"):
+		controller.DelPeople(messageevent)
 	default:
 		logrus.Errorf("Receive p2p TEXT message, but this type is not supported")
 	}

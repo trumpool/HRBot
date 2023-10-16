@@ -1,27 +1,24 @@
 feishu:
   # 该区域请于飞书开放平台查询本机器人信息,详见
   # https://open.feishu.cn/document/home/develop-a-bot-in-5-minutes/coding
-  appId: abc******
-  appSecret: abc******
-  verificationToken: abc******
-  encryptKey: abc******
+  appId: cli_a591c1b02279900e
+  appSecret: 3Qrm0ChE6c71gpaOpxEqJgD26GiArMIq
+  verificationToken: 3TI2aIbDiLEVvSy0w3mGtch7LMNV3cRy
+  encryptKey: ShtprXF3QksdWZTwtP4qseWSogdjhuyQ
   larkHost: "https://open.feishu.cn"
-
 server:
   # 端口，请根据实际情况为准
   port: 3000
-
   # add your custom fields here
   exampleField1: ExampleString
-
 # add your custom fields here
-departmentID: xxx
+departmentID: STD
 # 可选值有：
 #   department_id：以自定义department_id来标识部门
 #   open_department_id：以open_department_id来标识部门
-departmentIdType: xxx
-
+departmentIdType: department_id
 # 填写需要使用机器人的用户open_id
 whiteList:
-  - user_open_id1
-  - user_open_id2
+  - ou_3beb4cc9fe12d70f4bf4f4955ca005cd
+  - ou_4a3ae0c4a5ddea33ed39ba271b82d85c
+  - ou_bf3e7b524e1fc5768405baba75232b67
