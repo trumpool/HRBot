@@ -1,8 +1,8 @@
 # XLab 飞书机器人模板
 
-| Web Framework | Log Manager     | Config Manager | Api Documentation  | Feishu Api Client     |
-|:-------------:|:---------------:|:--------------:|:------------------:|:---------------------:|
-| gin-gonic/gin | sirupsen/logrus | spf13/viper    | swaggo/gin-swagger | YasyaKarasu/feishuapi |
+| Web Framework | Log Manager     | Config Manager | Api Documentation  | Feishu Api Client |
+|:-------------:|:---------------:|:--------------:|:------------------:|:-----------------:|
+| gin-gonic/gin | sirupsen/logrus | spf13/viper    | swaggo/gin-swagger |    oapi-sdk-go    |
 
 ## Usage
 
