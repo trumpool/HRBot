@@ -7,6 +7,7 @@ import (
 	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"github.com/sirupsen/logrus"
+	"regexp"
 	"strings"
 	"xlab-feishu-robot/internal/config"
 	"xlab-feishu-robot/internal/pkg"
@@ -259,4 +260,30 @@ func parsePeopleAndGroup(content string) (people []string, group []string) {
 	}
 
 	return
+}
+func _parsePeopleAndGroup(content string) (names []string, groups []string) {
+	// Regular expression to match the specified format
+	re := regexp.MustCompile(`(\p{L}+)\.([^\.]+)\.([^\.]+)`)
+
+	// Find all matches in the content string
+	matches := re.FindAllStringSubmatch(content, -1)
+
+	// Process each match and extract relevant information
+	for _, match := range matches {
+		// Trim spaces and commas from the names section
+		namesSection := strings.TrimSpace(match[2])
+		names = append(names, strings.FieldsFunc(namesSection, func(r rune) bool {
+			return r == ',' || r == ' ' || r == '\n'
+		})...)
+
+		// Trim spaces and commas from the groups section
+		groupsSection := strings.TrimSpace(match[3])
+		if groupsSection != "" {
+			groups = append(groups, strings.FieldsFunc(groupsSection, func(r rune) bool {
+				return r == ',' || r == ' ' || r == '\n'
+			})...)
+		}
+	}
+
+	return names, groups
 }

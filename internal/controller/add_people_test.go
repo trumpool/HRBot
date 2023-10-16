@@ -13,6 +13,18 @@ import (
 	"xlab-feishu-robot/internal/pkg"
 )
 
+func Test_Regex(t *testing.T) {
+	people, group := _parsePeopleAndGroup("家人.人名1 ,人名2  , 人名3   .  群名1,  群名2,   群名3")
+	assert.Equal(t, 3, len(people))
+	assert.Equal(t, 3, len(group))
+	for _, v := range people {
+		logrus.Info(v)
+	}
+	for _, v := range group {
+		logrus.Info(v)
+	}
+}
+
 func Test_getAllPeopleInDepartment(t *testing.T) {
 	setupForTest()
 	people, err := getAllPeopleInDepartment()
