@@ -40,7 +40,7 @@ func ReadConfig() {
 }
 
 func SetupFeishuApiClient() {
-	pkg.Client = lark.NewClient(C.Feishu.AppId, C.Feishu.AppSecret)
+	pkg.Client = lark.NewClient(C.Feishu.AppId, C.Feishu.AppSecret, lark.WithEnableTokenCache(true))
 }
 
 type FeishuConfig struct {

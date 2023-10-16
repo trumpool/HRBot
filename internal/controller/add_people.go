@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"github.com/sirupsen/logrus"
@@ -180,11 +179,7 @@ func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
 		DepartmentId(config.C.DepartmentID).
 		Build()
 	// 发起请求
-	tenantAccessToken, err := GetTenantAccessToken()
-	if err != nil {
-		return nil, err
-	}
-	resp, err := pkg.Client.Contact.User.FindByDepartment(context.Background(), req, larkcore.WithTenantAccessToken(tenantAccessToken))
+	resp, err := pkg.Client.Contact.User.FindByDepartment(context.Background(), req)
 	// 处理错误
 	if err != nil {
 		return nil, err
@@ -201,7 +196,7 @@ func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
 			DepartmentId(config.C.DepartmentID).
 			PageToken(*resp.Data.PageToken).
 			Build()
-		resp, err = pkg.Client.Contact.User.FindByDepartment(context.Background(), req, larkcore.WithTenantAccessToken(tenantAccessToken))
+		resp, err = pkg.Client.Contact.User.FindByDepartment(context.Background(), req)
 		if err != nil {
 			return nil, err
 		}
@@ -217,14 +212,9 @@ func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
 
 // getBotGroupList 获取机器人所在的所有群
 func getBotGroupList() ([]*larkim.ListChat, error) {
-	tenantAccessToken, err := GetTenantAccessToken()
-	if err != nil {
-		return nil, err
-	}
-
 	req := larkim.NewListChatReqBuilder().
 		Build()
-	resp, err := pkg.Client.Im.Chat.List(context.Background(), req, larkcore.WithTenantAccessToken(tenantAccessToken))
+	resp, err := pkg.Client.Im.Chat.List(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +227,7 @@ func getBotGroupList() ([]*larkim.ListChat, error) {
 		req = larkim.NewListChatReqBuilder().
 			PageToken(*resp.Data.PageToken).
 			Build()
-		resp, err = pkg.Client.Im.Chat.List(context.Background(), req, larkcore.WithTenantAccessToken(tenantAccessToken))
+		resp, err = pkg.Client.Im.Chat.List(context.Background(), req)
 		if err != nil {
 			return nil, err
 		}

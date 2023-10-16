@@ -60,10 +60,6 @@ func Test_inviteUserToGroupChat(t *testing.T) {
 func Test_SearchEmployee(t *testing.T) {
 	setupForTest()
 
-	tenantAccessToken, err := GetTenantAccessToken()
-	assert.NoError(t, err)
-	logrus.Info(tenantAccessToken)
-
 	resp, err := pkg.Client.Do(context.Background(),
 		&larkcore.ApiReq{
 			HttpMethod: http.MethodPost,
