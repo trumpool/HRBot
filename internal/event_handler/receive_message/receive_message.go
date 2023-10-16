@@ -22,5 +22,5 @@ func Receive(event map[string]any) {
 
 func map2struct(m map[string]interface{}, stru interface{}) {
 	bytes, _ := json.Marshal(m)
-	json.Unmarshal(bytes, stru)
+	_ = json.Unmarshal(bytes, stru)
 }

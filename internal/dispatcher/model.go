@@ -28,7 +28,10 @@ type FeishuEventRequest struct {
 
 func deserializeRequest(dataStr string, request *FeishuEventRequest) {
 	var data FeishuEventRequestRaw
-	json.Unmarshal([]byte(dataStr), &data)
+	err := json.Unmarshal([]byte(dataStr), &data)
+	if err != nil {
+		panic(err)
+	}
 
 	request.Challenge = data.Challenge
 	request.Event = data.Event
