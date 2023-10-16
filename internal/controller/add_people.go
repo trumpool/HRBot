@@ -82,12 +82,8 @@ func checkInviteResult(dataRecord []*larkim.CreateChatMembersRespData, messageEv
 	invalidIDList := make([]string, 0)
 	notExistedIDList := make([]string, 0)
 	for _, data := range dataRecord {
-		for _, v := range data.InvalidIdList {
-			invalidIDList = append(invalidIDList, v)
-		}
-		for _, v := range data.NotExistedIdList {
-			notExistedIDList = append(notExistedIDList, v)
-		}
+		invalidIDList = append(invalidIDList, data.InvalidIdList...)
+		notExistedIDList = append(notExistedIDList, data.NotExistedIdList...)
 	}
 
 	message := "以下用户未被邀请成功：\n"
