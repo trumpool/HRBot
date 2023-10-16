@@ -49,7 +49,7 @@ func Test_getGroupsID(t *testing.T) {
 
 func Test_inviteUserToGroupChat(t *testing.T) {
 	setupForTest()
-	err := inviteUserToGroupChat([]string{"123"}, []string{"123"})
+	_, err := inviteUserToGroupChat([]string{"123"}, []string{"123"})
 	assert.NoError(t, err)
 }
 

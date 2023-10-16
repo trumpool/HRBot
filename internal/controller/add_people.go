@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
@@ -38,14 +39,17 @@ func AddPeople(messageEvent *store.MessageEvent) {
 	logrus.Infof("groupsID:%v", groupsID)
 
 	// 将所有人加入所有群
-	err = inviteUserToGroupChat(peopleID, groupsID)
+	dataRecord, err := inviteUserToGroupChat(peopleID, groupsID)
 	if err != nil {
 		logrus.Error(err)
 		return
 	}
+
+	checkInviteResult(dataRecord, messageEvent)
 }
 
-func inviteUserToGroupChat(peopleID []string, groupsID []string) error {
+func inviteUserToGroupChat(peopleID []string, groupsID []string) ([]*larkim.CreateChatMembersRespData, error) {
+	dataRecord := make([]*larkim.CreateChatMembersRespData, 0)
 	for _, groupID := range groupsID {
 		// 创建请求对象
 		req := larkim.NewCreateChatMembersReqBuilder().
@@ -61,15 +65,71 @@ func inviteUserToGroupChat(peopleID []string, groupsID []string) error {
 		resp, err := pkg.Client.Im.ChatMembers.Create(context.Background(), req)
 		// 处理错误
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !resp.Success() {
-			return fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+			return nil, fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
 		}
-		logrus.Info(resp.Data)
+
+		dataRecord = append(dataRecord, resp.Data)
 	}
 
-	return nil
+	return dataRecord, nil
+}
+
+// checkInviteResult 检查邀请是否成功，如果失败则向用户发送失败信息
+func checkInviteResult(dataRecord []*larkim.CreateChatMembersRespData, messageEvent *store.MessageEvent) {
+	invalidIDList := make([]string, 0)
+	notExistedIDList := make([]string, 0)
+	for _, data := range dataRecord {
+		for _, v := range data.InvalidIdList {
+			invalidIDList = append(invalidIDList, v)
+		}
+		for _, v := range data.NotExistedIdList {
+			notExistedIDList = append(notExistedIDList, v)
+		}
+	}
+
+	failedMessage := "以下用户未被邀请成功：\n"
+	failedMessage += "无效的ID：\n"
+	for _, v := range invalidIDList {
+		failedMessage += fmt.Sprintf("%s\n", v)
+	}
+	failedMessage += "不存在的ID：\n"
+	for _, v := range notExistedIDList {
+		failedMessage += fmt.Sprintf("%s\n", v)
+	}
+
+	failedMessage += "请联系机器人管理员，将您的输入和错误信息一起反馈，谢谢！"
+
+	msgContent := map[string]interface{}{
+		"text": failedMessage,
+	}
+	msgContentJSON, err := json.Marshal(msgContent)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	req := larkim.NewCreateMessageReqBuilder().
+		ReceiveIdType("open_id").
+		Body(larkim.NewCreateMessageReqBodyBuilder().
+			ReceiveId(messageEvent.Sender.Sender_id.Open_id).
+			MsgType("text").
+			Content(string(msgContentJSON)).
+			Build()).
+		Build()
+
+	resp, err := pkg.Client.Im.Message.Create(context.Background(), req)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+
+	// 服务端错误处理
+	if !resp.Success() {
+		logrus.Error(resp.Code, resp.Msg)
+		return
+	}
 }
 
 func getPeopleID(wantedPeople []string) ([]string, error) {
