@@ -90,20 +90,24 @@ func checkInviteResult(dataRecord []*larkim.CreateChatMembersRespData, messageEv
 		}
 	}
 
-	failedMessage := "以下用户未被邀请成功：\n"
-	failedMessage += "无效的ID：\n"
+	message := "以下用户未被邀请成功：\n"
+	message += "无效的ID：\n"
 	for _, v := range invalidIDList {
-		failedMessage += fmt.Sprintf("%s\n", v)
+		message += fmt.Sprintf("%s\n", v)
 	}
-	failedMessage += "不存在的ID：\n"
+	message += "不存在的ID：\n"
 	for _, v := range notExistedIDList {
-		failedMessage += fmt.Sprintf("%s\n", v)
+		message += fmt.Sprintf("%s\n", v)
 	}
 
-	failedMessage += "请联系机器人管理员，将您的输入和错误信息一起反馈，谢谢！"
+	message += "请联系机器人管理员，将您的输入和错误信息一起反馈，谢谢！"
+
+	if len(invalidIDList) == 0 && len(notExistedIDList) == 0 {
+		message = "所有用户均已成功加入群聊！"
+	}
 
 	msgContent := map[string]interface{}{
-		"text": failedMessage,
+		"text": message,
 	}
 	msgContentJSON, err := json.Marshal(msgContent)
 	if err != nil {
