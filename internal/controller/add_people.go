@@ -101,34 +101,7 @@ func checkInviteResult(dataRecord []*larkim.CreateChatMembersRespData, messageEv
 		message = "所有用户均已成功加入群聊！"
 	}
 
-	msgContent := map[string]interface{}{
-		"text": message,
-	}
-	msgContentJSON, err := json.Marshal(msgContent)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-	req := larkim.NewCreateMessageReqBuilder().
-		ReceiveIdType("open_id").
-		Body(larkim.NewCreateMessageReqBodyBuilder().
-			ReceiveId(messageEvent.Sender.Sender_id.Open_id).
-			MsgType("text").
-			Content(string(msgContentJSON)).
-			Build()).
-		Build()
-
-	resp, err := pkg.Client.Im.Message.Create(context.Background(), req)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-
-	// 服务端错误处理
-	if !resp.Success() {
-		logrus.Error(resp.Code, resp.Msg)
-		return
-	}
+	SendMessage(messageEvent.Sender.Sender_id.Open_id, message)
 }
 
 func getPeopleID(wantedPeople []string) ([]string, error) {
