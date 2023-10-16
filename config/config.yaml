@@ -21,7 +21,7 @@ departmentID: xxx
 #   open_department_id：以open_department_id来标识部门
 departmentIdType: xxx
 
-# []string
+# 填写需要使用机器人的用户open_id
 whiteList:
   - user_open_id1
   - user_open_id2
