@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
@@ -23,23 +22,28 @@ func AddPeople(messageEvent *store.MessageEvent) {
 	people, group := parsePeopleAndGroup(messageEvent.Message.Content)
 	logrus.Infof("people:%v, group:%v", people, group)
 	// 获取所有人的ID
-	peopleID, err := getPeopleID(people)
+	foundPeopleMap, err := getPeopleID(people)
 	if err != nil {
 		logrus.Error(err)
 		return
 	}
-	logrus.Infof("peopleID:%v", peopleID)
+	logrus.Infof("foundPeopleMap:%v", foundPeopleMap)
 
 	// 获得所有群的ID
-	groupsID, err := getGroupsID(group)
+	foundGroupMap, err := getGroupsID(group)
 	if err != nil {
 		logrus.Error(err)
 		return
 	}
-	logrus.Infof("groupsID:%v", groupsID)
+	logrus.Infof("foundGroupMap:%v", foundGroupMap)
+
+	// 检查是否有未找到的ID
+	checkAllIDFound(foundPeopleMap, foundGroupMap, people, group, messageEvent)
+
+	checkWhetherBotInGroup(foundGroupMap, messageEvent)
 
 	// 将所有人加入所有群
-	dataRecord, err := inviteUserToGroupChat(peopleID, groupsID)
+	dataRecord, err := inviteUserToGroupChat(foundPeopleMap, foundGroupMap, messageEvent.Sender.Sender_id.Open_id)
 	if err != nil {
 		logrus.Error(err)
 		return
@@ -48,27 +52,28 @@ func AddPeople(messageEvent *store.MessageEvent) {
 	checkInviteResult(dataRecord, messageEvent)
 }
 
-func inviteUserToGroupChat(peopleID []string, groupsID []string) ([]*larkim.CreateChatMembersRespData, error) {
+func inviteUserToGroupChat(peopleMap map[string]string, groupsMap map[string]string, receiverID string) ([]*larkim.CreateChatMembersRespData, error) {
 	dataRecord := make([]*larkim.CreateChatMembersRespData, 0)
-	for _, groupID := range groupsID {
+	IDList := make([]string, 0)
+	for _, v := range peopleMap {
+		IDList = append(IDList, v)
+	}
+
+	for _, groupID := range groupsMap {
 		// 创建请求对象
 		req := larkim.NewCreateChatMembersReqBuilder().
 			ChatId(groupID).
 			MemberIdType("open_id").
-			// 将参数中可用的 ID 全部拉入群聊，返回拉群成功的响应，并展示剩余不可用的 ID 及原因
-			SucceedType(1).
+			SucceedType(0).
 			Body(larkim.NewCreateChatMembersReqBodyBuilder().
-				IdList(peopleID).
+				IdList(IDList).
 				Build()).
 			Build()
 		// 发起请求
 		resp, err := pkg.Client.Im.ChatMembers.Create(context.Background(), req)
 		// 处理错误
-		if err != nil {
-			return nil, err
-		}
-		if !resp.Success() {
-			return nil, fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+		if err != nil || !resp.Success() {
+			SendMessage(receiverID, fmt.Sprintf("邀请失败，错误信息：%s, response: %v", err.Error(), resp))
 		}
 
 		dataRecord = append(dataRecord, resp.Data)
@@ -99,77 +104,97 @@ func checkInviteResult(dataRecord []*larkim.CreateChatMembersRespData, messageEv
 	message += "请联系机器人管理员，将您的输入和错误信息一起反馈，谢谢！"
 
 	if len(invalidIDList) == 0 && len(notExistedIDList) == 0 {
-		message = "所有用户均已成功加入群聊！"
+		message = "执行结束"
 	}
 
-	msgContent := map[string]interface{}{
-		"text": message,
-	}
-	msgContentJSON, err := json.Marshal(msgContent)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-	req := larkim.NewCreateMessageReqBuilder().
-		ReceiveIdType("open_id").
-		Body(larkim.NewCreateMessageReqBodyBuilder().
-			ReceiveId(messageEvent.Sender.Sender_id.Open_id).
-			MsgType("text").
-			Content(string(msgContentJSON)).
-			Build()).
-		Build()
+	SendMessage(messageEvent.Sender.Sender_id.Open_id, message)
+}
 
-	resp, err := pkg.Client.Im.Message.Create(context.Background(), req)
-	if err != nil {
-		logrus.Error(err)
-		return
+// checkWhetherBotInGroup 检查机器人是否在群中，如果不在则向用户发送错误信息
+func checkWhetherBotInGroup(groupsMap map[string]string, messageEvent *store.MessageEvent) {
+	notInGroup := make([]string, 0)
+	for groupName, groupID := range groupsMap {
+		req := larkim.NewIsInChatChatMembersReqBuilder().
+			ChatId(groupID).
+			Build()
+		resp, err := pkg.Client.Im.ChatMembers.IsInChat(context.Background(), req)
+
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+		if !resp.Success() {
+			logrus.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+			return
+		}
+
+		if !*resp.Data.IsInChat {
+			notInGroup = append(notInGroup, groupName)
+		}
 	}
 
-	// 服务端错误处理
-	if !resp.Success() {
-		logrus.Error(resp.Code, resp.Msg)
-		return
+	if len(notInGroup) != 0 {
+		SendMessage(messageEvent.Sender.Sender_id.Open_id, fmt.Sprintf("机器人不在以下群中：%v", notInGroup))
 	}
 }
 
-func getPeopleID(wantedPeople []string) ([]string, error) {
+func checkAllIDFound(foundPeopleMap map[string]string, foundGroupMap map[string]string, peopleNameList []string, groupNameList []string, messageEvent *store.MessageEvent) {
+	message := ""
+	for _, v := range peopleNameList {
+		if _, ok := foundPeopleMap[v]; !ok {
+			message += fmt.Sprintf("未找到用户：%s\n", v)
+		}
+	}
+
+	for _, v := range groupNameList {
+		if _, ok := foundGroupMap[v]; !ok {
+			message += fmt.Sprintf("未找到群：%s\n", v)
+		}
+	}
+
+	if message != "" {
+		SendMessage(messageEvent.Sender.Sender_id.Open_id, message)
+	}
+}
+
+func getPeopleID(wantedPeople []string) (map[string]string, error) {
 	allPeople, err := getAllPeopleInDepartment()
 	if err != nil {
 		return nil, err
 	}
-	var result []string
 
 	wantedPeopleMap := make(map[string]bool)
 	for _, v := range wantedPeople {
 		wantedPeopleMap[v] = true
 	}
 
+	foundPeopleMap := make(map[string]string)
 	for _, v := range allPeople {
 		if wantedPeopleMap[*v.Name] {
-			result = append(result, *v.OpenId)
+			foundPeopleMap[*v.Name] = *v.OpenId
 		}
 	}
-	return result, nil
+	return foundPeopleMap, nil
 }
 
-func getGroupsID(wantedGroup []string) ([]string, error) {
+func getGroupsID(wantedGroup []string) (map[string]string, error) {
 	allGroups, err := getBotGroupList()
 	if err != nil {
 		return nil, err
 	}
-	var result []string
 
 	wantedGroupMap := make(map[string]bool)
 	for _, v := range wantedGroup {
 		wantedGroupMap[v] = true
 	}
 
+	foundGroupMap := make(map[string]string)
 	for _, v := range allGroups {
 		if wantedGroupMap[*v.Name] {
-			result = append(result, *v.ChatId)
+			foundGroupMap[*v.Name] = *v.ChatId
 		}
 	}
-	return result, nil
+	return foundGroupMap, nil
 }
 
 func getAllPeopleInDepartment() ([]*larkcontact.User, error) {
