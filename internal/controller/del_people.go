@@ -83,7 +83,7 @@ func checkDeleteResult(dataRecord []*larkim.DeleteChatMembersRespData, messageEv
 		//notExistedIDList = append(notExistedIDList, data.InvalidIdList...)
 	}
 
-	message := "以下用户未被邀请成功：\n"
+	message := "以下用户未被删除成功：\n"
 	message += "无效的ID：\n"
 	for _, v := range invalidIDList {
 		message += fmt.Sprintf("%s\n", v)
@@ -92,7 +92,7 @@ func checkDeleteResult(dataRecord []*larkim.DeleteChatMembersRespData, messageEv
 	message += "请联系机器人管理员，将您的输入和错误信息一起反馈，谢谢！"
 
 	if len(invalidIDList) == 0 {
-		message = "所有用户均已成功加入群聊！"
+		message = "所有用户均已成功从群聊中删除！"
 	}
 
 	msgContent := map[string]interface{}{
