@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	lark "github.com/larksuite/oapi-sdk-go/v3"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	larkauthen "github.com/larksuite/oapi-sdk-go/v3/service/authen/v1"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"github.com/sirupsen/logrus"
+	"xlab-feishu-robot/internal/config"
 	"xlab-feishu-robot/internal/pkg"
 	"xlab-feishu-robot/internal/store"
 )
@@ -21,38 +21,31 @@ type CodeResponse struct {
 	State       string
 }
 
-// todo: this part has not been tested yet!
 func Login(messageEvent *store.MessageEvent) {
 	redirectUrl := "https://81762kq506.goho.co/feiShu/GetUserAccessToken"
-	appID := "cli_a591c1b02279900e"
-	//loginLink := "https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=https://81762kq506.goho.co/feiShu/Event&app_id=cli_a591c1b02279900e"
+	appID := config.C.Feishu.AppId
 	loginLink := fmt.Sprintf("https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=%s&app_id=%s", redirectUrl, appID)
 	SendMessage(messageEvent.Sender.Sender_id.Open_id, "请点击以下链接进行登录：\n"+loginLink)
-
 	return
 }
 
+// 这个东西现在被直接挂载在路由下，hack了一下代码，不知道会不会有问题
 func GetCodeThenGetUserAccessToken(c *gin.Context) {
 	code := c.Query("code")
 	fmt.Println(code)
-	// setp1 get app_access_token
-	appID := "cli_a591c1b02279900e"
-	appSecret := "3Qrm0ChE6c71gpaOpxEqJgD26GiArMIq"
-	client := lark.NewClient(appID, appSecret)
+	//拿userAccessToken
 	req := larkauthen.NewCreateAccessTokenReqBuilder().
 		Body(larkauthen.NewCreateAccessTokenReqBodyBuilder().
 			GrantType("authorization_code").
 			Code(code).
 			Build()).
 		Build()
-	// 发起请求
-	resp, err := client.Authen.AccessToken.Create(context.Background(), req)
+	resp, err := pkg.Client.Authen.AccessToken.Create(context.Background(), req)
 	if err != nil {
 		logrus.Error("Cannot Get User Access Token ", req)
 		return
 	}
 	userAccessToken = *resp.Data.AccessToken
-	fmt.Println(userAccessToken)
 	return
 }
 func DelPeople(messageEvent *store.MessageEvent) {
@@ -148,8 +141,4 @@ func checkDeleteResult(dataRecord []*larkim.DeleteChatMembersRespData, messageEv
 
 	SendMessage(messageEvent.Sender.Sender_id.Open_id, message)
 
-}
-
-func getUserAccessToken() (userAccessToken string) {
-	return
 }
