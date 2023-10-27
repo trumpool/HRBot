@@ -2,16 +2,59 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	lark "github.com/larksuite/oapi-sdk-go/v3"
+	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
+	larkauthen "github.com/larksuite/oapi-sdk-go/v3/service/authen/v1"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"github.com/sirupsen/logrus"
 	"xlab-feishu-robot/internal/pkg"
 	"xlab-feishu-robot/internal/store"
 )
 
-//todo: this part has not been tested yet!
+var userAccessToken string
 
+type CodeResponse struct {
+	RedirectRrl string
+	Code        string
+	State       string
+}
+
+// todo: this part has not been tested yet!
+func Login(messageEvent *store.MessageEvent) {
+	redirectUrl := "https://81762kq506.goho.co/feiShu/GetUserAccessToken"
+	appID := "cli_a591c1b02279900e"
+	//loginLink := "https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=https://81762kq506.goho.co/feiShu/Event&app_id=cli_a591c1b02279900e"
+	loginLink := fmt.Sprintf("https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=%s&app_id=%s", redirectUrl, appID)
+	SendMessage(messageEvent.Sender.Sender_id.Open_id, "请点击以下链接进行登录：\n"+loginLink)
+
+	return
+}
+
+func GetCodeThenGetUserAccessToken(c *gin.Context) {
+	code := c.Query("code")
+	fmt.Println(code)
+	// setp1 get app_access_token
+	appID := "cli_a591c1b02279900e"
+	appSecret := "3Qrm0ChE6c71gpaOpxEqJgD26GiArMIq"
+	client := lark.NewClient(appID, appSecret)
+	req := larkauthen.NewCreateAccessTokenReqBuilder().
+		Body(larkauthen.NewCreateAccessTokenReqBodyBuilder().
+			GrantType("authorization_code").
+			Code(code).
+			Build()).
+		Build()
+	// 发起请求
+	resp, err := client.Authen.AccessToken.Create(context.Background(), req)
+	if err != nil {
+		logrus.Error("Cannot Get User Access Token ", req)
+		return
+	}
+	userAccessToken = *resp.Data.AccessToken
+	fmt.Println(userAccessToken)
+	return
+}
 func DelPeople(messageEvent *store.MessageEvent) {
 	// 检查权限
 	if !HasPermission(messageEvent) {
@@ -37,8 +80,12 @@ func DelPeople(messageEvent *store.MessageEvent) {
 	}
 	logrus.Infof("groupsID:%v", groupsID)
 
-	// 将所有人加入所有群
-	dataRecord, err := deleteUserInGroupChat(peopleID, groupsID)
+	checkAllIDFound(peopleID, groupsID, people, group, messageEvent)
+
+	checkWhetherBotInGroup(groupsID, messageEvent)
+
+	// 删人
+	dataRecord, err := deleteUserInGroupChat(peopleID, groupsID, messageEvent.Sender.Sender_id.Open_id)
 	if err != nil {
 		logrus.Error(err)
 		return
@@ -46,28 +93,34 @@ func DelPeople(messageEvent *store.MessageEvent) {
 
 	checkDeleteResult(dataRecord, messageEvent)
 }
-func deleteUserInGroupChat(peopleID []string, groupsID []string) ([]*larkim.DeleteChatMembersRespData, error) {
+func deleteUserInGroupChat(peopleMap map[string]string, groupsMap map[string]string, receiverID string) ([]*larkim.DeleteChatMembersRespData, error) {
 	dataRecord := make([]*larkim.DeleteChatMembersRespData, 0)
-	for _, groupID := range groupsID {
+	IDList := make([]string, 0)
+	for _, v := range peopleMap {
+		IDList = append(IDList, v)
+	}
+
+	for _, groupID := range groupsMap {
 		// 创建请求对象
 		req := larkim.NewDeleteChatMembersReqBuilder().
 			ChatId(groupID).
 			MemberIdType("open_id").
 			Body(larkim.NewDeleteChatMembersReqBodyBuilder().
-				IdList(peopleID).
+				IdList(IDList).
 				Build()).
 			Build()
-
-		resp, err := pkg.Client.Im.ChatMembers.Delete(context.Background(), req)
+		// 发起请求
+		//userAccessToken := "empty"
+		//userAccessToken = getUserAccessToken()
+		resp, err := pkg.Client.Im.ChatMembers.Delete(context.Background(), req, larkcore.WithUserAccessToken(userAccessToken))
 		// 处理错误
-		if err != nil {
-			return nil, err
-		}
-		if !resp.Success() {
-			return nil, fmt.Errorf("resp failed, code:%d, msg:%s", resp.Code, resp.Msg)
+		if err != nil || !resp.Success() {
+			SendMessage(receiverID, fmt.Sprintf("邀请失败，错误信息：%s, response: %v", err.Error(), resp))
 		}
 
 		dataRecord = append(dataRecord, resp.Data)
+
+		fmt.Println(larkcore.Prettify(resp))
 	}
 
 	return dataRecord, nil
@@ -76,11 +129,9 @@ func deleteUserInGroupChat(peopleID []string, groupsID []string) ([]*larkim.Dele
 // checkInviteResult 检查删除是否成功，如果失败则向用户发送失败信息
 func checkDeleteResult(dataRecord []*larkim.DeleteChatMembersRespData, messageEvent *store.MessageEvent) {
 	invalidIDList := make([]string, 0)
-	//notExistedIDList := make([]string, 0)
 	for _, data := range dataRecord {
 		invalidIDList = append(invalidIDList, data.InvalidIdList...)
 		//only returns invalid id
-		//notExistedIDList = append(notExistedIDList, data.InvalidIdList...)
 	}
 
 	message := "以下用户未被删除成功：\n"
@@ -95,32 +146,10 @@ func checkDeleteResult(dataRecord []*larkim.DeleteChatMembersRespData, messageEv
 		message = "所有用户均已成功从群聊中删除！"
 	}
 
-	msgContent := map[string]interface{}{
-		"text": message,
-	}
-	msgContentJSON, err := json.Marshal(msgContent)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
-	req := larkim.NewCreateMessageReqBuilder().
-		ReceiveIdType("open_id").
-		Body(larkim.NewCreateMessageReqBodyBuilder().
-			ReceiveId(messageEvent.Sender.Sender_id.Open_id).
-			MsgType("text").
-			Content(string(msgContentJSON)).
-			Build()).
-		Build()
+	SendMessage(messageEvent.Sender.Sender_id.Open_id, message)
 
-	resp, err := pkg.Client.Im.Message.Create(context.Background(), req)
-	if err != nil {
-		logrus.Error(err)
-		return
-	}
+}
 
-	// 服务端错误处理
-	if !resp.Success() {
-		logrus.Error(resp.Code, resp.Msg)
-		return
-	}
+func getUserAccessToken() (userAccessToken string) {
+	return
 }
