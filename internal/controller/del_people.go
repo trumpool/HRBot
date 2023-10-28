@@ -3,35 +3,13 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
-	larkauthen "github.com/larksuite/oapi-sdk-go/v3/service/authen/v1"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"github.com/sirupsen/logrus"
 	"xlab-feishu-robot/internal/pkg"
 	"xlab-feishu-robot/internal/store"
 )
 
-var userAccessToken string
-
-func GetCodeThenGetUserAccessToken(c *gin.Context) {
-	code := c.Query("code")
-	fmt.Println(code)
-	//拿userAccessToken
-	req := larkauthen.NewCreateAccessTokenReqBuilder().
-		Body(larkauthen.NewCreateAccessTokenReqBodyBuilder().
-			GrantType("authorization_code").
-			Code(code).
-			Build()).
-		Build()
-	resp, err := pkg.Client.Authen.AccessToken.Create(context.Background(), req)
-	if err != nil {
-		logrus.Error("Cannot Get User Access Token ", req)
-		return
-	}
-	userAccessToken = *resp.Data.AccessToken
-	return
-}
 func DelPeople(messageEvent *store.MessageEvent) {
 	// 检查权限
 	if !HasPermission(messageEvent) {
@@ -63,7 +41,7 @@ func DelPeople(messageEvent *store.MessageEvent) {
 
 	// 删人
 	dataRecord, err := deleteUserInGroupChat(peopleID, groupsID, messageEvent.Sender.Sender_id.Open_id)
-	if err != nil {
+	if err != nil || dataRecord == nil {
 		logrus.Error(err)
 		return
 	}
@@ -89,15 +67,22 @@ func deleteUserInGroupChat(peopleMap map[string]string, groupsMap map[string]str
 		// 发起请求
 		//userAccessToken := "empty"
 		//userAccessToken = getUserAccessToken()
+		userAccessToken, err := GetUserAccessToken(receiverID)
+		if err != nil || userAccessToken == "" {
+			SendMessage(receiverID, fmt.Sprintf("您尚未登陆， 发送 开始使用 以登录"))
+			return nil, err
+		}
 		resp, err := pkg.Client.Im.ChatMembers.Delete(context.Background(), req, larkcore.WithUserAccessToken(userAccessToken))
 		// 处理错误
-		if err != nil || !resp.Success() {
-			SendMessage(receiverID, fmt.Sprintf("邀请失败，错误信息：%s, response: %v", err.Error(), resp))
+		if err != nil {
+			SendMessage(receiverID, fmt.Sprintf("机器人发送消息时错误，错误信息：%s, response: %v", err.Error(), resp))
+		} else if !resp.Success() {
+			SendMessage(receiverID, fmt.Sprintf("删除成员失败，错误信息：%d, response: %v", resp.Code, resp.Msg))
 		}
 
 		dataRecord = append(dataRecord, resp.Data)
 
-		fmt.Println(larkcore.Prettify(resp))
+		//fmt.Println(larkcore.Prettify(resp))
 	}
 
 	return dataRecord, nil
@@ -107,6 +92,9 @@ func deleteUserInGroupChat(peopleMap map[string]string, groupsMap map[string]str
 func checkDeleteResult(dataRecord []*larkim.DeleteChatMembersRespData, messageEvent *store.MessageEvent) {
 	invalidIDList := make([]string, 0)
 	for _, data := range dataRecord {
+		if (data == nil) || (data.InvalidIdList == nil) {
+			continue
+		}
 		invalidIDList = append(invalidIDList, data.InvalidIdList...)
 		//only returns invalid id
 	}
@@ -120,7 +108,9 @@ func checkDeleteResult(dataRecord []*larkim.DeleteChatMembersRespData, messageEv
 	message += "请联系机器人管理员，将您的输入和错误信息一起反馈，谢谢！"
 
 	if len(invalidIDList) == 0 {
-		message = "所有用户均已成功从群聊中删除！"
+		//message = "所有用户均已成功从群聊中删除！"
+		//这里不能用invalidIDList来判断，如果有错误在前面就会返回，这里只处理非法ID的情况
+		return
 	}
 
 	SendMessage(messageEvent.Sender.Sender_id.Open_id, message)

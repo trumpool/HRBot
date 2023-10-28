@@ -2,7 +2,6 @@ package dispatcher
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -47,7 +46,6 @@ func Dispatcher(c *gin.Context) {
 
 	var req FeishuEventRequest
 	deserializeRequest(requestStr, &req)
-	fmt.Println(req)
 	logrus.Debug("Feishu Robot received a request: ", req)
 
 	// return to server test event
