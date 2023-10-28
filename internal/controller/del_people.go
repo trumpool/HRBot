@@ -8,28 +8,12 @@ import (
 	larkauthen "github.com/larksuite/oapi-sdk-go/v3/service/authen/v1"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"github.com/sirupsen/logrus"
-	"xlab-feishu-robot/internal/config"
 	"xlab-feishu-robot/internal/pkg"
 	"xlab-feishu-robot/internal/store"
 )
 
 var userAccessToken string
 
-type CodeResponse struct {
-	RedirectRrl string
-	Code        string
-	State       string
-}
-
-func Login(messageEvent *store.MessageEvent) {
-	redirectUrl := "https://81762kq506.goho.co/feiShu/GetUserAccessToken"
-	appID := config.C.Feishu.AppId
-	loginLink := fmt.Sprintf("https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=%s&app_id=%s", redirectUrl, appID)
-	SendMessage(messageEvent.Sender.Sender_id.Open_id, "请点击以下链接进行登录：\n"+loginLink)
-	return
-}
-
-// 这个东西现在被直接挂载在路由下，hack了一下代码，不知道会不会有问题
 func GetCodeThenGetUserAccessToken(c *gin.Context) {
 	code := c.Query("code")
 	fmt.Println(code)

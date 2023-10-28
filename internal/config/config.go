@@ -18,8 +18,9 @@ type Config struct {
 
 	DepartmentID     string
 	DepartmentIdType string
-
-	WhiteList []string
+	WhiteList        []string
+	//获得登录预览码的url，需要添加到config里面
+	RedirectUrl string
 }
 
 var C Config
