@@ -78,6 +78,8 @@ func deleteUserInGroupChat(peopleMap map[string]string, groupsMap map[string]str
 			SendMessage(receiverID, fmt.Sprintf("机器人发送消息时错误，错误信息：%s, response: %v", err.Error(), resp))
 		} else if !resp.Success() {
 			SendMessage(receiverID, fmt.Sprintf("删除成员失败，错误信息：%d, response: %v", resp.Code, resp.Msg))
+		} else {
+			SendMessage(receiverID, fmt.Sprintf("删除结束"))
 		}
 
 		dataRecord = append(dataRecord, resp.Data)
