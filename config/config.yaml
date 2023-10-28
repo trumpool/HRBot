@@ -2,8 +2,8 @@ feishu:
   # 该区域请于飞书开放平台查询本机器人信息,详见
   # https://open.feishu.cn/document/home/develop-a-bot-in-5-minutes/coding
   appId: cli_a591c1b02279900e
-  appSecret: 3Qrm0ChE6c71gpaOpxEqJgD26GiArMIq
-  verificationToken: 3TI2aIbDiLEVvSy0w3mGtch7LMNV3cRy
+  appSecret: 
+  verificationToken: 
   encryptKey: ShtprXF3QksdWZTwtP4qseWSogdjhuyQ
   larkHost: "https://open.feishu.cn"
 server:
