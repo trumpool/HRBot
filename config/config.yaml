@@ -19,3 +19,4 @@ departmentID: STD
 departmentIdType: department_id
 # 填写需要使用机器人的用户open_id
 whiteList:
+redirectUrl:
