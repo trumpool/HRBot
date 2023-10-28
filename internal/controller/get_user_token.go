@@ -26,13 +26,13 @@ func GetCodeThenGetUserAccessToken(c *gin.Context) {
 			Build()).
 		Build()
 	resp, err := pkg.Client.Authen.AccessToken.Create(context.Background(), req)
-	SetUserAccessToken(user_open_id, *resp.Data.AccessToken)
 	if err != nil {
 		logrus.Error("Cannot Get User Access Token ", req)
 		return
 	} else {
 		SendMessage(user_open_id, "登录授权成功, User access token: "+*resp.Data.AccessToken)
 	}
+	SetUserAccessToken(user_open_id, *resp.Data.AccessToken)
 	return
 }
 

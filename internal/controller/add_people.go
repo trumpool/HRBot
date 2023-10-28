@@ -272,43 +272,16 @@ func parsePeopleAndGroup(content string) (people []string, group []string) {
 	// 1. 以.分割
 	tmp := strings.Split(content, ".")
 	peopleStr, groupStr := tmp[1], tmp[2]
-	// 2. 以,分割
-	people = strings.Split(peopleStr, ",")
-	group = strings.Split(groupStr, ",")
-
-	// 3. 去除空格
-	for i := 0; i < len(people); i++ {
-		people[i] = strings.TrimSpace(people[i])
+	// 2. 以, ， \\n 分割
+	re := regexp.MustCompile(`[,，\\n]+`)
+	people = re.Split(peopleStr, -1)
+	group = re.Split(groupStr, -1)
+	// 去除空格
+	for i, name := range people {
+		people[i] = strings.TrimSpace(name)
 	}
-	for i := 0; i < len(group); i++ {
-		group[i] = strings.TrimSpace(group[i])
+	for i, groupName := range group {
+		group[i] = strings.TrimSpace(groupName)
 	}
-
-	return
-}
-func _parsePeopleAndGroup(content string) (names []string, groups []string) {
-	// Regular expression to match the specified format
-	re := regexp.MustCompile(`(\p{L}+)\.([^\.]+)\.([^\.]+)`)
-
-	// Find all matches in the content string
-	matches := re.FindAllStringSubmatch(content, -1)
-
-	// Process each match and extract relevant information
-	for _, match := range matches {
-		// Trim spaces and commas from the names section
-		namesSection := strings.TrimSpace(match[2])
-		names = append(names, strings.FieldsFunc(namesSection, func(r rune) bool {
-			return r == ',' || r == ' ' || r == '\n'
-		})...)
-
-		// Trim spaces and commas from the groups section
-		groupsSection := strings.TrimSpace(match[3])
-		if groupsSection != "" {
-			groups = append(groups, strings.FieldsFunc(groupsSection, func(r rune) bool {
-				return r == ',' || r == ' ' || r == '\n'
-			})...)
-		}
-	}
-
-	return names, groups
+	return people, group
 }

@@ -65,8 +65,6 @@ func deleteUserInGroupChat(peopleMap map[string]string, groupsMap map[string]str
 				Build()).
 			Build()
 		// 发起请求
-		//userAccessToken := "empty"
-		//userAccessToken = getUserAccessToken()
 		userAccessToken, err := GetUserAccessToken(receiverID)
 		if err != nil || userAccessToken == "" {
 			SendMessage(receiverID, fmt.Sprintf("您尚未登陆， 发送 开始使用 以登录"))
@@ -84,7 +82,6 @@ func deleteUserInGroupChat(peopleMap map[string]string, groupsMap map[string]str
 
 		dataRecord = append(dataRecord, resp.Data)
 
-		//fmt.Println(larkcore.Prettify(resp))
 	}
 
 	return dataRecord, nil
