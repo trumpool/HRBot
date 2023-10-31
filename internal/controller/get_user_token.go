@@ -30,7 +30,7 @@ func GetCodeThenGetUserAccessToken(c *gin.Context) {
 		logrus.Error("Cannot Get User Access Token ", req)
 		return
 	} else {
-		SendMessage(user_open_id, "登录授权成功, User access token: "+*resp.Data.AccessToken)
+		//SendMessage(user_open_id, "登录授权成功, User access token: "+*resp.Data.AccessToken)
 	}
 	SetUserAccessToken(user_open_id, *resp.Data.AccessToken)
 	return
